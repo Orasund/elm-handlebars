@@ -1,0 +1,4 @@
+{
+  "root": "../src",
+  "tests": ["Internal.Path", "Handlebars.Value", "Handlebars"]
+}
