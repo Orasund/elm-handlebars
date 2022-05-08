@@ -1,4 +1,10 @@
 {
   "root": "../src",
-  "tests": ["Internal.Path", "Handlebars.Value", "Handlebars"]
+  "tests": [
+    "Internal.Path",
+    "Handlebars.Value",
+    "Handlebars.Expression",
+    "Handlebars.Syntax",
+    "Handlebars"
+  ]
 }

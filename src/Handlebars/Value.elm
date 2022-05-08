@@ -3,6 +3,7 @@ module Handlebars.Value exposing (..)
 import Array exposing (Array)
 import Dict exposing (Dict)
 import Internal.Path exposing (Path)
+import Json.Value
 
 
 type Value
@@ -10,6 +11,34 @@ type Value
     | BooleanValue Bool
     | ArrayValue (Array Value)
     | ObjectValue (Dict String Value)
+
+
+fromJson : Json.Value.JsonValue -> Value
+fromJson v =
+    case v of
+        Json.Value.ObjectValue list ->
+            list
+                |> List.map (Tuple.mapSecond fromJson)
+                |> Dict.fromList
+                |> ObjectValue
+
+        Json.Value.ArrayValue list ->
+            list
+                |> List.map fromJson
+                |> Array.fromList
+                |> ArrayValue
+
+        Json.Value.BoolValue bool ->
+            bool |> BooleanValue
+
+        Json.Value.NullValue ->
+            False |> BooleanValue
+
+        Json.Value.NumericValue float ->
+            float |> String.fromFloat |> StringValue
+
+        Json.Value.StringValue string ->
+            StringValue string
 
 
 {-| Get a value by the path.

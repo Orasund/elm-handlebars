@@ -82,32 +82,3 @@ unless { arg, content } =
 
     else
         \_ -> Ok ""
-
-
-each : BlockHelper
-each { arg, content, throw } args =
-    case arg of
-        ArrayValue array ->
-            array
-                |> Array.toList
-                |> List.indexedMap
-                    (\i _ ->
-                        content
-                            { path = args.path ++ [ String.fromInt i ]
-                            , context = args.context
-                            }
-                    )
-                |> Result.Extra.combine
-                |> Result.map String.concat
-
-        ObjectValue dict ->
-            dict
-                |> Dict.keys
-                |> List.map (\key -> content { args | path = args.path ++ [ key ] })
-                |> Result.Extra.combine
-                |> Result.map String.concat
-
-        _ ->
-            "argument must be either an array or an object"
-                |> throw
-                |> Err

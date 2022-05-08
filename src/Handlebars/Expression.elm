@@ -1,5 +1,6 @@
 module Handlebars.Expression exposing (..)
 
+import Array
 import Dict exposing (Dict)
 import Handlebars.Value as Value exposing (Value(..))
 import Internal.Path as Path exposing (Path, RelativePath)
@@ -20,9 +21,9 @@ type alias ExpHelper =
 type alias BlockHelper =
     { arg : Value
     , throw : String -> Error
-    , content : { path : Path, context : Value } -> Result Error String
+    , content : Path -> Result Error String
     }
-    -> { path : Path, context : Value }
+    -> Path
     -> Result Error String
 
 
@@ -34,18 +35,16 @@ type SubExp
 type Expression
     = Text String
     | Variable SubExp --{{subExp}}
+    | For RelativePath Expression --{{#for}} content {{/for}}
     | Block String SubExp Expression --{{#name subExp }} exp {{/name}}
 
 
 type Error
     = StringExpected ( SubExp, Value )
-    | BlockHelperNot String
+    | CollectionExpected Path RelativePath
+    | BlockHelperNotFound String
     | FromBlockHelper { helper : String, error : String }
-    | AtSubExp SubExpError
-
-
-type SubExpError
-    = PathNotValid Path RelativePath
+    | PathNotValid Path RelativePath
     | PathNotFound Path
     | HelperNotFound String
     | FromHelper { helper : String, error : String }
@@ -54,6 +53,7 @@ type SubExpError
 {-| Evaluate a subexpression
 
     import Dict
+    import Handlebars exposing (defaultConfig)
     import Handlebars.Value exposing (Value(..))
 
     expression : Expression
@@ -119,7 +119,7 @@ Helper can also be used inside of subexpression.
         --> True
 
 -}
-evalSubExp : Config -> Value -> SubExp -> Result SubExpError Value
+evalSubExp : Config -> Value -> SubExp -> Result Error Value
 evalSubExp template value e1 =
     case e1 of
         LookUp relativePath ->
@@ -159,6 +159,8 @@ evalSubExp template value e1 =
 
     import Dict
     import Handlebars.Value exposing (Value(..))
+    import Handlebars
+    import Array
 
     jack : Value
     jack =
@@ -168,19 +170,24 @@ evalSubExp template value e1 =
     value =
         [ ( "name", jack )
         , ( "key", StringValue "name" )
-        , ( "isValid", BooleanValue True)
+        , ( "valid", BooleanValue True)
+        , ( "people",
+            [ StringValue "jack" , StringValue "gill" ]
+            |> Array.fromList
+            |> ArrayValue
+        )
         ]
             |> Dict.fromList
             |> ObjectValue
 
-    evalExp defaultConfig
+    evalExp Handlebars.defaultConfig
         ("Hello World"
             |> Text
         )
         value
         --> Ok "Hello World"
 
-    evalExp defaultConfig
+    evalExp Handlebars.defaultConfig
         ([ Just "name"]
             |> LookUp
             |> Variable
@@ -188,7 +195,7 @@ evalSubExp template value e1 =
         value
         --> Ok "jack"
 
-    evalExp defaultConfig
+    evalExp Handlebars.defaultConfig
         ( Helper "equals"
             ( LookUp [ Just "name"]
             , [ LookUp [ Just "key"] ]
@@ -205,19 +212,26 @@ evalSubExp template value e1 =
             )
         --> True
 
-    evalExp defaultConfig
-        ( Block "if" (LookUp [Just "isValid"])
+    evalExp Handlebars.defaultConfig
+        ( For [Just "people"]
+            ([Just "@index"] |> LookUp |> Variable)
+        )
+        value
+        --> Ok "01"
+
+    evalExp Handlebars.defaultConfig
+        ( Block "if" (LookUp [Just "valid"])
             (Text "Hello")
         )
         value
         --> Ok "Hello"
 
-    evalExp defaultConfig
+    evalExp Handlebars.defaultConfig
         ( Block "invalid" (LookUp [])
             (Text "Hello")
         )
         value
-        --> Err (BlockHelperNot "invalid")
+        --> Err (BlockHelperNotFound "invalid")
 
 -}
 evalExp : Config -> Expression -> Value -> Result Error String
@@ -229,7 +243,6 @@ evalExp config expression value =
         Variable subExp ->
             subExp
                 |> evalSubExp config value
-                |> Result.mapError AtSubExp
                 |> Result.andThen
                     (\v ->
                         case v of
@@ -240,12 +253,60 @@ evalExp config expression value =
                                 Err (StringExpected ( subExp, v ))
                     )
 
+        For relativePath e ->
+            case config.root |> Path.withRelativePath relativePath of
+                Just path ->
+                    case Value.get path value of
+                        Nothing ->
+                            PathNotFound path |> Err
+
+                        Just (ArrayValue array) ->
+                            array
+                                |> Array.toList
+                                |> List.indexedMap
+                                    (\i _ ->
+                                        evalExp
+                                            { config
+                                                | root =
+                                                    config.root
+                                                        ++ path
+                                                        ++ [ String.fromInt i ]
+                                            }
+                                            e
+                                            value
+                                    )
+                                |> Result.Extra.combine
+                                |> Result.map String.concat
+
+                        Just (ObjectValue dict) ->
+                            dict
+                                |> Dict.keys
+                                |> List.map
+                                    (\key ->
+                                        evalExp
+                                            { config
+                                                | root =
+                                                    config.root
+                                                        ++ path
+                                                        ++ [ key ]
+                                            }
+                                            e
+                                            value
+                                    )
+                                |> Result.Extra.combine
+                                |> Result.map String.concat
+
+                        _ ->
+                            CollectionExpected config.root relativePath |> Err
+
+                Nothing ->
+                    PathNotValid config.root relativePath |> Err
+
         Block string subExp exp ->
             case config.blockHelpers |> Dict.get string of
                 Just fun ->
                     subExp
                         |> evalSubExp config value
-                        |> Result.mapError AtSubExp
                         |> Result.andThen
                             (\arg ->
                                 fun
@@ -253,13 +314,11 @@ evalExp config expression value =
                                     , throw = \err -> FromBlockHelper { helper = string, error = err }
                                     , content =
                                         \args ->
-                                            args.context
-                                                |> evalExp { config | root = args.path } exp
+                                            value
+                                                |> evalExp { config | root = args } exp
                                     }
-                                    { path = config.root
-                                    , context = value
-                                    }
+                                    config.root
                             )
 
                 Nothing ->
-                    BlockHelperNot string |> Err
+                    BlockHelperNotFound string |> Err
