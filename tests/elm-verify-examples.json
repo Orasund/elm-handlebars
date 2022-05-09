@@ -4,6 +4,7 @@
     "Internal.Path",
     "Handlebars.Expression",
     "Handlebars.Value",
+    "Handlebars.Syntax",
     "Handlebars"
   ]
 }

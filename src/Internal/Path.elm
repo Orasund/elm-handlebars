@@ -93,7 +93,7 @@ withRelativePath ( back, forward ) list =
         length =
             list |> List.length
     in
-    if length > back then
+    if back < 0 || length < back then
         Nothing
 
     else

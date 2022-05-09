@@ -123,6 +123,18 @@ subExp =
             )
 
 
+{-|
+
+    import Parser
+    import Handlebars.Expression as Expression exposing (Expression(..), SubExp(..))
+    import Result.Extra as Result
+
+    ""
+        |> Parser.run variable
+        |> Result.isOk
+        --> False
+
+-}
 variable : Parser String
 variable =
     let
@@ -175,21 +187,21 @@ variable =
 -}
 path : Parser RelativePath
 path =
-    let
-        rec =
-            Parser.oneOf
-                [ Parser.succeed identity
-                    |. Parser.symbol "."
-                    |= variable
-                , variable
-                ]
-    in
     Parser.succeed Tuple.pair
         |= (internalRepeat (Parser.symbol "../") |> Parser.map List.length)
         |= Parser.oneOf
             [ Parser.succeed []
                 |. Parser.symbol "."
-            , internalRepeat rec
+            , Parser.succeed (::)
+                |= variable
+                |= internalRepeat
+                    (Parser.oneOf
+                        [ Parser.succeed identity
+                            |. Parser.symbol "."
+                            |= variable
+                        , variable
+                        ]
+                    )
             ]
 
 
