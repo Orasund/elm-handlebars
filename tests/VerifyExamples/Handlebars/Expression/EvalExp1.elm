@@ -35,12 +35,12 @@ jack =
 
 spec1 : Test.Test
 spec1 =
-    Test.test "#evalExp: \n\n    evalExp Handlebars.defaultConfig\n        ( Block \"if\" (LookUp [Just \"valid\"])\n            (Text \"Hello\")\n        )\n        value\n    --> Ok \"Hello\"" <|
+    Test.test "#evalExp: \n\n    evalExp Handlebars.defaultConfig\n        ( Block \"if\" (LookUp (0,[\"valid\"]))\n            (Text \"Hello\")\n        )\n        value\n    --> Ok \"Hello\"" <|
         \() ->
             Expect.equal
                 (
                 evalExp Handlebars.defaultConfig
-                    ( Block "if" (LookUp [Just "valid"])
+                    ( Block "if" (LookUp (0,["valid"]))
                         (Text "Hello")
                     )
                     value

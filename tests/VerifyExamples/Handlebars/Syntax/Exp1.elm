@@ -7,6 +7,7 @@ import Test
 import Expect
 
 import Handlebars.Syntax exposing (..)
+import Result.Extra as Result
 import Handlebars.Expression as Expression exposing (Expression(..), SubExp(..))
 import Parser
 
@@ -18,13 +19,13 @@ import Parser
 
 spec1 : Test.Test
 spec1 =
-    Test.test "#exp: \n\n    \"{{test}}\"\n    |> Parser.run exp\n    --> Ok (Variable (LookUp [Just \"test\"]))" <|
+    Test.test "#exp: \n\n    \"Hello {{\"\n    |> Parser.run exp\n    --> Ok (Text \"Hello \")" <|
         \() ->
             Expect.equal
                 (
-                "{{test}}"
+                "Hello {{"
                 |> Parser.run exp
                 )
                 (
-                Ok (Variable (LookUp [Just "test"]))
+                Ok (Text "Hello ")
                 )

@@ -35,12 +35,12 @@ jack =
 
 spec4 : Test.Test
 spec4 =
-    Test.test "#evalExp: \n\n    evalExp Handlebars.defaultConfig\n        ([ Just \"name\"]\n            |> LookUp\n            |> Variable\n        )\n        value\n    --> Ok \"jack\"" <|
+    Test.test "#evalExp: \n\n    evalExp Handlebars.defaultConfig\n        ( (0,[\"name\"])\n            |> LookUp\n            |> Variable\n        )\n        value\n    --> Ok \"jack\"" <|
         \() ->
             Expect.equal
                 (
                 evalExp Handlebars.defaultConfig
-                    ([ Just "name"]
+                    ( (0,["name"])
                         |> LookUp
                         |> Variable
                     )

@@ -35,7 +35,7 @@ type SubExp
 type Expression
     = Text String
     | Variable SubExp --{{subExp}}
-    | For RelativePath Expression --{{#for}} content {{/for}}
+    | For RelativePath Expression --{{#path}} content {{/path}}
     | Block String SubExp Expression --{{#name subExp }} exp {{/name}}
 
 
@@ -74,29 +74,29 @@ type Error
 
 Simplest subexpression is a look up to a relative path.
 
-    LookUp [Just "name"]
+    LookUp (0,["name"])
         |> evalSubExp defaultConfig value
         --> Ok jack
 
-    LookUp [Just "job"]
+    LookUp (0,["job"])
         |> evalSubExp defaultConfig  value
         --> Err (PathNotFound ["job"])
 
-    LookUp [Nothing]
+    LookUp (1,[])
         |> evalSubExp defaultConfig value
-        --> Err (PathNotValid [] [Nothing])
+        --> Err (PathNotValid [] (1,[]))
 
-    LookUp [Nothing]
+    LookUp (1,[])
         |> evalSubExp {defaultConfig | root = ["name"]} value
         --> Ok value
 
 Helper can also be used inside of subexpression.
 
-    Helper "lookup" ( LookUp [], [LookUp [ Just "key" ]] )
+    Helper "lookup" ( LookUp (0,[]), [LookUp (0,[ "key" ])] )
         |> evalSubExp defaultConfig value
         --> Ok jack
 
-    Helper "lookup" ( LookUp [ Just "name"], [LookUp [ Just "key" ]] )
+    Helper "lookup" ( LookUp (0,[ "name"]), [LookUp (0,[ "key" ])] )
         |> evalSubExp defaultConfig value
         |> (\err ->
             case err of
@@ -107,7 +107,7 @@ Helper can also be used inside of subexpression.
         )
         --> True
 
-    Helper "lookup" (LookUp [],[])
+    Helper "lookup" (LookUp (0,[]),[])
         |> evalSubExp defaultConfig value
         |> (\err ->
             case err of
@@ -188,7 +188,7 @@ evalSubExp template value e1 =
         --> Ok "Hello World"
 
     evalExp Handlebars.defaultConfig
-        ([ Just "name"]
+        ( (0,["name"])
             |> LookUp
             |> Variable
         )
@@ -197,8 +197,8 @@ evalSubExp template value e1 =
 
     evalExp Handlebars.defaultConfig
         ( Helper "equals"
-            ( LookUp [ Just "name"]
-            , [ LookUp [ Just "key"] ]
+            ( LookUp (0,[ "name"])
+            , [ LookUp (0,[ "key"]) ]
             )
             |> Variable
         )
@@ -213,21 +213,21 @@ evalSubExp template value e1 =
         --> True
 
     evalExp Handlebars.defaultConfig
-        ( For [Just "people"]
-            ([Just "@index"] |> LookUp |> Variable)
+        ( For (0,["people"])
+            ((0,[ "@index"]) |> LookUp |> Variable)
         )
         value
         --> Ok "01"
 
     evalExp Handlebars.defaultConfig
-        ( Block "if" (LookUp [Just "valid"])
+        ( Block "if" (LookUp (0,["valid"]))
             (Text "Hello")
         )
         value
         --> Ok "Hello"
 
     evalExp Handlebars.defaultConfig
-        ( Block "invalid" (LookUp [])
+        ( Block "invalid" (LookUp (0,[]))
             (Text "Hello")
         )
         value

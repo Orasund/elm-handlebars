@@ -7,6 +7,7 @@ import Test
 import Expect
 
 import Handlebars.Syntax exposing (..)
+import Result.Extra as Result
 import Handlebars.Expression as Expression exposing (Expression(..), SubExp(..))
 import Parser
 
@@ -18,20 +19,13 @@ import Parser
 
 spec1 : Test.Test
 spec1 =
-    Test.test "#path: \n\n    \"\"\n    |> Parser.run path\n    |> (\\err ->\n        case err of\n            Err _ ->\n                False\n            Ok _ ->\n                True\n        )\n    --> False" <|
+    Test.test "#path: \n\n    \"../some\"\n    |> Parser.run path\n    --> Ok (1,[\"some\"])" <|
         \() ->
             Expect.equal
                 (
-                ""
+                "../some"
                 |> Parser.run path
-                |> (\err ->
-                    case err of
-                        Err _ ->
-                            False
-                        Ok _ ->
-                            True
-                    )
                 )
                 (
-                False
+                Ok (1,["some"])
                 )

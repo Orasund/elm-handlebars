@@ -2,7 +2,7 @@ module Handlebars.Syntax exposing (..)
 
 import Handlebars.Expression as Expression exposing (Expression(..), SubExp(..))
 import Handlebars.Value exposing (Value(..))
-import Internal.Path exposing (RelativePath)
+import Internal.Path as Path exposing (RelativePath)
 import Parser exposing ((|.), (|=), Parser)
 import Parser.Extras
 import Set
@@ -12,6 +12,7 @@ import Set
 
     import Parser
     import Handlebars.Expression as Expression exposing (Expression(..), SubExp(..))
+    import Result.Extra as Result
 
     "Hello {{"
     |> Parser.run exp
@@ -19,11 +20,7 @@ import Set
 
     "{{test}}"
     |> Parser.run exp
-    --> Ok (Variable (LookUp [Just "test"]))
-
-    "{{test a b c}}"
-    |> Parser.run exp
-    --> Ok (Variable (Helper "test" (LookUp [Just "a"],[LookUp [Just "b"],LookUp [Just "c"]])))
+    --> Ok (Variable (LookUp (0,["test"])))
 
 -}
 exp : Parser Expression
@@ -32,23 +29,26 @@ exp =
         [ Parser.succeed identity
             |. Parser.symbol "{{"
             |= Parser.oneOf
-                [ Parser.succeed
-                    (\name args ->
-                        Variable
-                            (case args of
-                                [] ->
-                                    LookUp [ Just name ]
+                [ Parser.succeed (\p1 e p2 -> ( p1, p2, For p1 e ))
+                    |. Parser.symbol "#"
+                    |= path
+                    |. Parser.symbol "}}"
+                    |= Parser.lazy (\() -> exp)
+                    |. Parser.symbol "{{/"
+                    |= path
+                    |> Parser.andThen
+                        (\( p1, p2, e ) ->
+                            if p1 == p2 then
+                                Parser.succeed e
 
-                                head :: tail ->
-                                    Helper name
-                                        ( LookUp [ Just head ]
-                                        , tail |> List.map (\it -> LookUp [ Just it ])
-                                        )
-                            )
-                    )
-                    |= variable
-                    |. Parser.chompWhile ((==) ' ')
-                    |= Parser.Extras.many variable
+                            else
+                                "The block starts with "
+                                    ++ Path.relativeToString p1
+                                    ++ ", but ends with "
+                                    ++ Path.relativeToString p2
+                                    |> Parser.problem
+                        )
+                , subExp |> Parser.map Variable
                 ]
             |. Parser.symbol "}}"
         , Parser.chompUntilEndOr "{{"
@@ -57,11 +57,81 @@ exp =
         ]
 
 
+{-|
+
+    import Parser
+    import Handlebars.Expression as Expression exposing (Expression(..), SubExp(..))
+    import Result.Extra as Result
+
+    "test some.test"
+    |> Parser.run subExp
+    --> Ok (Helper "test" (LookUp (0,["some","test"]),[]))
+
+    "test a b c"
+    |> Parser.run subExp
+    --> Ok (Helper "test" (LookUp (0,["a"]),[LookUp (0,["b"]),LookUp (0,["c"])]))
+
+    "some.test a"
+    |> Parser.run subExp
+    |> Result.isOk
+    --> False
+
+    "some (test a) b"
+    |> Parser.run subExp
+    --> Ok (Helper "some" ( (Helper "test" (LookUp (0,["a"]),[]) ), [LookUp (0,["b"])]) )
+
+    "(test)"
+    |> Parser.run subExp
+    |> Result.isOk
+    --> False
+
+    "some (a)"
+    |> Parser.run subExp
+    --> Ok (Helper "some" (LookUp (0,["a"]),[]))
+
+-}
+subExp : Parser SubExp
+subExp =
+    (Parser.succeed Tuple.pair
+        |= path
+        |. Parser.chompWhile ((==) ' ')
+        |= Parser.Extras.many
+            (Parser.oneOf
+                [ Parser.succeed identity
+                    |. Parser.symbol "("
+                    |= Parser.lazy (\() -> subExp)
+                    |. Parser.symbol ")"
+                , path |> Parser.map LookUp
+                ]
+            )
+    )
+        |> Parser.andThen
+            (\( relativePath, args ) ->
+                case ( relativePath, args ) of
+                    ( r, [] ) ->
+                        LookUp r |> Parser.succeed
+
+                    ( ( 0, [ name ] ), head :: tail ) ->
+                        Helper name
+                            ( head
+                            , tail
+                            )
+                            |> Parser.succeed
+
+                    ( _, head :: tail ) ->
+                        "'.' is not allowed in variable name" |> Parser.problem
+            )
+
+
 variable : Parser String
 variable =
+    let
+        list =
+            [ '#', '}', '{', ' ', '\n', '\u{000D}', '.', '(', ')' ]
+    in
     Parser.variable
-        { start = \c -> [ '#', '}', '{', ' ', '\n', '\u{000D}', '.' ] |> List.member c |> not
-        , inner = \c -> [ '#', '}', '{', ' ', '\n', '\u{000D}', '.' ] |> List.member c |> not
+        { start = \c -> list |> List.member c |> not
+        , inner = \c -> list |> List.member c |> not
         , reserved = Set.empty
         }
 
@@ -70,21 +140,37 @@ variable =
 
     import Parser
     import Handlebars.Expression as Expression exposing (Expression(..), SubExp(..))
+    import Result.Extra as Result
 
     ""
     |> Parser.run path
-    |> (\err ->
-        case err of
-            Err _ ->
-                False
-            Ok _ ->
-                True
-        )
+    |> Result.isOk
     --> False
 
     "."
     |> Parser.run path
-    --> Ok []
+    --> Ok (0,[])
+
+    "../"
+    |> Parser.run path
+    |> Result.isOk
+    --> False
+
+    "../."
+    |> Parser.run path
+    --> Ok (1,[])
+
+    "some.test"
+    |> Parser.run path
+    --> Ok (0,["some", "test"])
+
+    "../some"
+    |> Parser.run path
+    --> Ok (1,["some"])
+
+    "some.test a"
+    |> Parser.run path
+    --> Ok (0,["some", "test"])
 
 -}
 path : Parser RelativePath
@@ -92,22 +178,31 @@ path =
     let
         rec =
             Parser.oneOf
-                [ Parser.succeed Nothing
-                    |. Parser.symbol "../"
-                , Parser.succeed Just
+                [ Parser.succeed identity
                     |. Parser.symbol "."
                     |= variable
-                , Parser.succeed Just
-                    |= variable
+                , variable
                 ]
     in
-    Parser.oneOf
-        [ Parser.succeed (\b -> Nothing :: b)
-            |. Parser.symbol "../"
-            |= Parser.Extras.many rec
-        , Parser.succeed []
-            |. Parser.symbol "."
-        , Parser.succeed (\a b -> Just a :: b)
-            |= variable
-            |= Parser.Extras.many rec
-        ]
+    Parser.succeed Tuple.pair
+        |= (internalRepeat (Parser.symbol "../") |> Parser.map List.length)
+        |= Parser.oneOf
+            [ Parser.succeed []
+                |. Parser.symbol "."
+            , internalRepeat rec
+            ]
+
+
+internalRepeat : Parser a -> Parser (List a)
+internalRepeat parser =
+    let
+        manyHelp : Parser a -> List a -> Parser (Parser.Step (List a) (List a))
+        manyHelp p vs =
+            Parser.oneOf
+                [ Parser.succeed (\v -> Parser.Loop (v :: vs))
+                    |= p
+                , Parser.succeed ()
+                    |> Parser.map (\_ -> Parser.Done (List.reverse vs))
+                ]
+    in
+    Parser.loop [] (manyHelp parser)

@@ -28,13 +28,13 @@ jack =
 
 spec4 : Test.Test
 spec4 =
-    Test.test "#evalSubExp: \n\n    LookUp [Nothing]\n        |> evalSubExp defaultConfig value\n    --> Err (PathNotValid [] [Nothing])" <|
+    Test.test "#evalSubExp: \n\n    LookUp (1,[])\n        |> evalSubExp defaultConfig value\n    --> Err (PathNotValid [] (1,[]))" <|
         \() ->
             Expect.equal
                 (
-                LookUp [Nothing]
+                LookUp (1,[])
                     |> evalSubExp defaultConfig value
                 )
                 (
-                Err (PathNotValid [] [Nothing])
+                Err (PathNotValid [] (1,[]))
                 )

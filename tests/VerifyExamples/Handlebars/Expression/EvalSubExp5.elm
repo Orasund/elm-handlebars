@@ -28,11 +28,11 @@ jack =
 
 spec5 : Test.Test
 spec5 =
-    Test.test "#evalSubExp: \n\n    LookUp [Just \"job\"]\n        |> evalSubExp defaultConfig  value\n    --> Err (PathNotFound [\"job\"])" <|
+    Test.test "#evalSubExp: \n\n    LookUp (0,[\"job\"])\n        |> evalSubExp defaultConfig  value\n    --> Err (PathNotFound [\"job\"])" <|
         \() ->
             Expect.equal
                 (
-                LookUp [Just "job"]
+                LookUp (0,["job"])
                     |> evalSubExp defaultConfig  value
                 )
                 (
