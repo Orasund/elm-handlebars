@@ -2,9 +2,8 @@
   "root": "../src",
   "tests": [
     "Internal.Path",
-    "Handlebars.Value",
     "Handlebars.Expression",
-    "Handlebars.Syntax",
+    "Handlebars.Value",
     "Handlebars"
   ]
 }
