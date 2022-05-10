@@ -22,6 +22,29 @@ import Set
     |> Parser.run exp
     --> Ok (Variable (LookUp (0,["test"])))
 
+    "{{#test}}hello world{{/test}}"
+    |> Parser.run exp
+    --> Ok (For (0,["test"]) (Text "hello world"))
+
+    "{{#test a}}hello world{{/test}}"
+    |> Parser.run exp
+    --> Ok (Block "test" (LookUp (0,["a"])) (Text "hello world"))
+
+    "{{#some.test a}}hello world{{/test}}"
+    |> Parser.run exp
+    |> Result.isOk
+    --> False
+
+    "{{#some}}hello world{{/test}}"
+    |> Parser.run exp
+    |> Result.isOk
+    --> False
+
+    "{{#test}}hello world"
+    |> Parser.run exp
+    |> Result.isOk
+    --> False
+
 -}
 exp : Parser Expression
 exp =
@@ -29,17 +52,34 @@ exp =
         [ Parser.succeed identity
             |. Parser.symbol "{{"
             |= Parser.oneOf
-                [ Parser.succeed (\p1 e p2 -> ( p1, p2, For p1 e ))
+                [ Parser.succeed (\p1 arg e p2 -> { p1 = p1, p2 = p2, arg = arg, e = e })
                     |. Parser.symbol "#"
                     |= path
+                    |= Parser.oneOf
+                        [ Parser.succeed Just
+                            |. Parser.chompWhile ((==) ' ')
+                            |= Parser.lazy (\() -> subExp)
+                        , Parser.succeed Nothing
+                        ]
                     |. Parser.symbol "}}"
                     |= Parser.lazy (\() -> exp)
                     |. Parser.symbol "{{/"
                     |= path
                     |> Parser.andThen
-                        (\( p1, p2, e ) ->
+                        (\{ p1, p2, arg, e } ->
                             if p1 == p2 then
-                                Parser.succeed e
+                                case ( p1, arg ) of
+                                    ( _, Nothing ) ->
+                                        For p1 e |> Parser.succeed
+
+                                    ( ( 0, [ name ] ), Just a ) ->
+                                        Block name a e |> Parser.succeed
+
+                                    ( _, Just a ) ->
+                                        "The block "
+                                            ++ Path.relativeToString p1
+                                            ++ " has an argument, but its not a helper."
+                                            |> Parser.problem
 
                             else
                                 "The block starts with "
