@@ -19,14 +19,13 @@ import Parser
 
 spec1 : Test.Test
 spec1 =
-    Test.test "#exp: \n\n    \"{{#test}}hello world\"\n    |> Parser.run exp\n    |> Result.isOk\n    --> False" <|
+    Test.test "#exp: \n\n    \"{{#test}}hello {{name}}{{/test}}\"\n    |> Parser.run exp\n    --> Ok (For (0,[\"test\"]) [Text \"hello \",Variable (LookUp (0,[\"name\"]))])" <|
         \() ->
             Expect.equal
                 (
-                "{{#test}}hello world"
+                "{{#test}}hello {{name}}{{/test}}"
                 |> Parser.run exp
-                |> Result.isOk
                 )
                 (
-                False
+                Ok (For (0,["test"]) [Text "hello ",Variable (LookUp (0,["name"]))])
                 )

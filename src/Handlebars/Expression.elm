@@ -35,8 +35,8 @@ type SubExp
 type Expression
     = Text String
     | Variable SubExp --{{subExp}}
-    | For RelativePath Expression --{{#path}} content {{/path}}
-    | Block String SubExp Expression --{{#name subExp }} exp {{/name}}
+    | For RelativePath (List Expression) --{{#path}} content {{/path}}
+    | Block String SubExp (List Expression) --{{#name subExp }} exp {{/name}}
 
 
 type Error
@@ -214,21 +214,21 @@ evalSubExp template value e1 =
 
     evalExp Handlebars.defaultConfig
         ( For (0,["people"])
-            ((0,[ "@index"]) |> LookUp |> Variable)
+            [(0,[ "@index"]) |> LookUp |> Variable]
         )
         value
         --> Ok "01"
 
     evalExp Handlebars.defaultConfig
         ( Block "if" (LookUp (0,["valid"]))
-            (Text "Hello")
+            [Text "Hello"]
         )
         value
         --> Ok "Hello"
 
     evalExp Handlebars.defaultConfig
         ( Block "invalid" (LookUp (0,[]))
-            (Text "Hello")
+            [Text "Hello"]
         )
         value
         --> Err (BlockHelperNotFound "invalid")
@@ -265,33 +265,42 @@ evalExp config expression value =
                                 |> Array.toList
                                 |> List.indexedMap
                                     (\i _ ->
-                                        evalExp
-                                            { config
-                                                | root =
-                                                    config.root
-                                                        ++ path
-                                                        ++ [ String.fromInt i ]
-                                            }
-                                            e
-                                            value
+                                        e
+                                            |> List.map
+                                                (\it ->
+                                                    evalExp
+                                                        { config
+                                                            | root =
+                                                                config.root
+                                                                    ++ path
+                                                                    ++ [ String.fromInt i ]
+                                                        }
+                                                        it
+                                                        value
+                                                )
                                     )
+                                |> List.concat
                                 |> Result.Extra.combine
                                 |> Result.map String.concat
 
                         Just (ObjectValue dict) ->
                             dict
                                 |> Dict.keys
-                                |> List.map
+                                |> List.concatMap
                                     (\key ->
-                                        evalExp
-                                            { config
-                                                | root =
-                                                    config.root
-                                                        ++ path
-                                                        ++ [ key ]
-                                            }
-                                            e
-                                            value
+                                        e
+                                            |> List.map
+                                                (\it ->
+                                                    evalExp
+                                                        { config
+                                                            | root =
+                                                                config.root
+                                                                    ++ path
+                                                                    ++ [ key ]
+                                                        }
+                                                        it
+                                                        value
+                                                )
                                     )
                                 |> Result.Extra.combine
                                 |> Result.map String.concat
@@ -314,8 +323,14 @@ evalExp config expression value =
                                     , throw = \err -> FromBlockHelper { helper = string, error = err }
                                     , content =
                                         \args ->
-                                            value
-                                                |> evalExp { config | root = args } exp
+                                            exp
+                                                |> List.map
+                                                    (\it ->
+                                                        value
+                                                            |> evalExp { config | root = args } it
+                                                    )
+                                                |> Result.Extra.combine
+                                                |> Result.map String.concat
                                     }
                                     config.root
                             )

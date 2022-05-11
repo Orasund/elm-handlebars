@@ -35,13 +35,13 @@ jack =
 
 spec0 : Test.Test
 spec0 =
-    Test.test "#evalExp: \n\n    evalExp Handlebars.defaultConfig\n        ( Block \"invalid\" (LookUp (0,[]))\n            (Text \"Hello\")\n        )\n        value\n    --> Err (BlockHelperNotFound \"invalid\")" <|
+    Test.test "#evalExp: \n\n    evalExp Handlebars.defaultConfig\n        ( Block \"invalid\" (LookUp (0,[]))\n            [Text \"Hello\"]\n        )\n        value\n    --> Err (BlockHelperNotFound \"invalid\")" <|
         \() ->
             Expect.equal
                 (
                 evalExp Handlebars.defaultConfig
                     ( Block "invalid" (LookUp (0,[]))
-                        (Text "Hello")
+                        [Text "Hello"]
                     )
                     value
                 )

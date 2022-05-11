@@ -24,11 +24,11 @@ import Set
 
     "{{#test}}hello world{{/test}}"
     |> Parser.run exp
-    --> Ok (For (0,["test"]) (Text "hello world"))
+    --> Ok (For (0,["test"]) [Text "hello world"])
 
     "{{#test a}}hello world{{/test}}"
     |> Parser.run exp
-    --> Ok (Block "test" (LookUp (0,["a"])) (Text "hello world"))
+    --> Ok (Block "test" (LookUp (0,["a"])) [Text "hello world"])
 
     "{{#some.test a}}hello world{{/test}}"
     |> Parser.run exp
@@ -45,14 +45,32 @@ import Set
     |> Result.isOk
     --> False
 
+    "{{#test}}hello {{name}}{{/test}}"
+    |> Parser.run exp
+    --> Ok (For (0,["test"]) [Text "hello ",Variable (LookUp (0,["name"]))])
+
+    "{{#test}}{{#test}}hello world{{/test}}{{/test}}"
+    |> Parser.run exp
+    --> Ok (For (0,["test"]) [For (0,["test"]) [Text "hello world"]])
+
 -}
 exp : Parser Expression
 exp =
     Parser.oneOf
-        [ Parser.succeed identity
+        [ Parser.succeed (++)
+            |= Parser.variable
+                { start = (/=) '{'
+                , inner = \_ -> False
+                , reserved = Set.empty
+                }
+            |= (Parser.chompUntilEndOr "{{"
+                    |> Parser.getChompedString
+               )
+            |> Parser.map Text
+        , Parser.succeed identity
             |. Parser.symbol "{{"
             |= Parser.oneOf
-                [ Parser.succeed (\p1 arg e p2 -> { p1 = p1, p2 = p2, arg = arg, e = e })
+                [ Parser.succeed (\p1 arg e1 e2 p2 -> { p1 = p1, p2 = p2, arg = arg, e = e1 :: e2 })
                     |. Parser.symbol "#"
                     |= path
                     |= Parser.oneOf
@@ -63,6 +81,7 @@ exp =
                         ]
                     |. Parser.symbol "}}"
                     |= Parser.lazy (\() -> exp)
+                    |= internalRepeat (Parser.lazy (\() -> exp))
                     |. Parser.symbol "{{/"
                     |= path
                     |> Parser.andThen
@@ -91,9 +110,7 @@ exp =
                 , subExp |> Parser.map Variable
                 ]
             |. Parser.symbol "}}"
-        , Parser.chompUntilEndOr "{{"
-            |> Parser.getChompedString
-            |> Parser.map Text
+            |> Parser.backtrackable
         ]
 
 
@@ -179,7 +196,7 @@ variable : Parser String
 variable =
     let
         list =
-            [ '#', '}', '{', ' ', '\n', '\u{000D}', '.', '(', ')' ]
+            [ '#', '}', '{', ' ', '\n', '\u{000D}', '.', '(', ')', '/' ]
     in
     Parser.variable
         { start = \c -> list |> List.member c |> not
