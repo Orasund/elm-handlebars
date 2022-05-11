@@ -18,6 +18,10 @@ import Set
     |> Parser.run exp
     --> Ok (Text "Hello ")
 
+    "Hello \\{\\{world\\}\\}"
+    |> Parser.run exp
+    --> Ok (Text "Hello {{world}}")
+
     "{{test}}"
     |> Parser.run exp
     --> Ok (Variable (LookUp (0,["test"])))
@@ -66,7 +70,14 @@ exp =
             |= (Parser.chompUntilEndOr "{{"
                     |> Parser.getChompedString
                )
-            |> Parser.map Text
+            |> Parser.map
+                (\string ->
+                    string
+                        |> String.replace "\\\\" "\\"
+                        |> String.replace "\\{" "{"
+                        |> String.replace "\\}" "}"
+                        |> Text
+                )
         , Parser.succeed identity
             |. Parser.symbol "{{"
             |= Parser.oneOf
