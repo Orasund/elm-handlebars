@@ -19,13 +19,13 @@ import Parser
 
 spec8 : Test.Test
 spec8 =
-    Test.test "#exp: \n\n    \"Hello \\\\{\\\\{world\\\\}\\\\}\"\n    |> Parser.run exp\n    --> Ok (Text \"Hello {{world}}\")" <|
+    Test.test "#exp: \n\n    \"{{test}}\"\n    |> Parser.run exp\n    --> Ok (Variable (LookUp (0,[\"test\"])))" <|
         \() ->
             Expect.equal
                 (
-                "Hello \\{\\{world\\}\\}"
+                "{{test}}"
                 |> Parser.run exp
                 )
                 (
-                Ok (Text "Hello {{world}}")
+                Ok (Variable (LookUp (0,["test"])))
                 )

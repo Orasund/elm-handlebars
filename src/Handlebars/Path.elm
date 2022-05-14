@@ -1,13 +1,26 @@
-module Internal.Path exposing (..)
+module Handlebars.Path exposing (Path, RelativePath, relativeToString, toString, withRelativePath)
+
+{-| Paths let you navigate through values.
+
+@docs Path, RelativePath, relativeToString, toString, withRelativePath
+
+-}
 
 import Json.Decode exposing (string)
 import List exposing (tail)
 
 
+{-| A Path is list of strings
+-}
 type alias Path =
     List String
 
 
+{-| Relative paths can go backwards.
+
+First argument states how many layers to go back.
+
+-}
 type alias RelativePath =
     ( Int, List String )
 
@@ -58,6 +71,13 @@ relativeToString ( int, list ) =
            )
 
 
+{-|
+
+    toString : Path -> String
+    toString list =
+        relativeToString ( 0, list )
+
+-}
 toString : Path -> String
 toString list =
     relativeToString ( 0, list )

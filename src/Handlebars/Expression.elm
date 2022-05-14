@@ -1,12 +1,20 @@
-module Handlebars.Expression exposing (..)
+module Handlebars.Expression exposing (BlockHelper, Config, Error(..), ExpHelper, Expression(..), SubExp(..), evalExp, evalSubExp)
+
+{-| A Handlebar template is composed out of expression.
+
+@docs BlockHelper, Config, Error, ExpHelper, Expression, SubExp, evalExp, evalSubExp
+
+-}
 
 import Array
 import Dict exposing (Dict)
+import Handlebars.Path as Path exposing (Path, RelativePath)
 import Handlebars.Value as Value exposing (Value(..))
-import Internal.Path as Path exposing (Path, RelativePath)
 import Result.Extra
 
 
+{-| The config can be used to extend the helpers.
+-}
 type alias Config =
     { expHelpers : Dict String ExpHelper
     , blockHelpers : Dict String BlockHelper
@@ -14,10 +22,14 @@ type alias Config =
     }
 
 
+{-| Expression Helper
+-}
 type alias ExpHelper =
     List Value -> Result String Value
 
 
+{-| Block Helper
+-}
 type alias BlockHelper =
     { arg : Value
     , throw : String -> Error
@@ -27,11 +39,15 @@ type alias BlockHelper =
     -> Result Error String
 
 
+{-| Sub expressions
+-}
 type SubExp
     = LookUp RelativePath --some.path
     | Helper String ( SubExp, List SubExp ) --helper a b c
 
 
+{-| Expression
+-}
 type Expression
     = Text String
     | Variable SubExp --{{subExp}}
@@ -39,6 +55,8 @@ type Expression
     | Block String SubExp (List Expression) --{{#name subExp }} exp {{/name}}
 
 
+{-| Evaluation Errors
+-}
 type Error
     = StringExpected ( SubExp, Value )
     | CollectionExpected Path RelativePath

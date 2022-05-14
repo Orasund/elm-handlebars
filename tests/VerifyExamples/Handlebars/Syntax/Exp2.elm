@@ -19,14 +19,13 @@ import Parser
 
 spec2 : Test.Test
 spec2 =
-    Test.test "#exp: \n\n    \"{{#test}}hello world\"\n    |> Parser.run exp\n    |> Result.isOk\n    --> False" <|
+    Test.test "#exp: \n\n    \"{{#blockHelper (helper a)}}hello world{{/blockHelper}}\"\n    |> Parser.run exp\n    --> Ok (Block \"blockHelper\" (Helper \"helper\" (LookUp (0,[\"a\"]),[])) [Text \"hello world\"])" <|
         \() ->
             Expect.equal
                 (
-                "{{#test}}hello world"
+                "{{#blockHelper (helper a)}}hello world{{/blockHelper}}"
                 |> Parser.run exp
-                |> Result.isOk
                 )
                 (
-                False
+                Ok (Block "blockHelper" (Helper "helper" (LookUp (0,["a"]),[])) [Text "hello world"])
                 )

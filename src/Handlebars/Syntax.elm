@@ -1,11 +1,24 @@
-module Handlebars.Syntax exposing (..)
+module Handlebars.Syntax exposing (exp, parser, path, subExp, variable)
+
+{-| Parsing a Template
+
+@docs exp, parser, path, subExp, variable
+
+-}
 
 import Handlebars.Expression as Expression exposing (Expression(..), SubExp(..))
+import Handlebars.Path as Path exposing (RelativePath)
 import Handlebars.Value exposing (Value(..))
-import Internal.Path as Path exposing (RelativePath)
 import Parser exposing ((|.), (|=), Parser)
 import Parser.Extras
 import Set
+
+
+{-| Parser for a template
+-}
+parser : Parser (List Expression)
+parser =
+    internalRepeat exp
 
 
 {-|
@@ -13,6 +26,8 @@ import Set
     import Parser
     import Handlebars.Expression as Expression exposing (Expression(..), SubExp(..))
     import Result.Extra as Result
+
+text
 
     "Hello {{"
     |> Parser.run exp
@@ -22,13 +37,29 @@ import Set
     |> Parser.run exp
     --> Ok (Text "Hello {{world}}")
 
+variables
+
     "{{test}}"
     |> Parser.run exp
     --> Ok (Variable (LookUp (0,["test"])))
 
+For block
+
     "{{#test}}hello world{{/test}}"
-    |> Parser.run exp
+        |> Parser.run exp
     --> Ok (For (0,["test"]) [Text "hello world"])
+
+    "{{#some}}hello world{{/test}}"
+        |> Parser.run exp
+        |> Result.isOk
+    --> False
+
+    "{{#test}}hello world"
+        |> Parser.run exp
+        |> Result.isOk
+    --> False
+
+Helper Block
 
     "{{#test a}}hello world{{/test}}"
     |> Parser.run exp
@@ -39,15 +70,9 @@ import Set
     |> Result.isOk
     --> False
 
-    "{{#some}}hello world{{/test}}"
+    "{{#blockHelper (helper a)}}hello world{{/blockHelper}}"
     |> Parser.run exp
-    |> Result.isOk
-    --> False
-
-    "{{#test}}hello world"
-    |> Parser.run exp
-    |> Result.isOk
-    --> False
+    --> Ok (Block "blockHelper" (Helper "helper" (LookUp (0,["a"]),[])) [Text "hello world"])
 
     "{{#test}}hello {{name}}{{/test}}"
     |> Parser.run exp
@@ -87,7 +112,13 @@ exp =
                     |= Parser.oneOf
                         [ Parser.succeed Just
                             |. Parser.chompWhile ((==) ' ')
-                            |= Parser.lazy (\() -> subExp)
+                            |= Parser.oneOf
+                                [ Parser.succeed identity
+                                    |. Parser.symbol "("
+                                    |= Parser.lazy (\() -> subExp)
+                                    |. Parser.symbol ")"
+                                , Parser.lazy (\() -> subExp)
+                                ]
                         , Parser.succeed Nothing
                         ]
                     |. Parser.symbol "}}"
@@ -274,7 +305,7 @@ path =
 
 
 internalRepeat : Parser a -> Parser (List a)
-internalRepeat parser =
+internalRepeat par =
     let
         manyHelp : Parser a -> List a -> Parser (Parser.Step (List a) (List a))
         manyHelp p vs =
@@ -285,4 +316,4 @@ internalRepeat parser =
                     |> Parser.map (\_ -> Parser.Done (List.reverse vs))
                 ]
     in
-    Parser.loop [] (manyHelp parser)
+    Parser.loop [] (manyHelp par)

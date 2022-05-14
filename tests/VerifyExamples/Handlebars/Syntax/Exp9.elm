@@ -19,13 +19,13 @@ import Parser
 
 spec9 : Test.Test
 spec9 =
-    Test.test "#exp: \n\n    \"Hello {{\"\n    |> Parser.run exp\n    --> Ok (Text \"Hello \")" <|
+    Test.test "#exp: \n\n    \"Hello \\\\{\\\\{world\\\\}\\\\}\"\n    |> Parser.run exp\n    --> Ok (Text \"Hello {{world}}\")" <|
         \() ->
             Expect.equal
                 (
-                "Hello {{"
+                "Hello \\{\\{world\\}\\}"
                 |> Parser.run exp
                 )
                 (
-                Ok (Text "Hello ")
+                Ok (Text "Hello {{world}}")
                 )

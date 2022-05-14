@@ -1,11 +1,33 @@
-module Handlebars.Value exposing (..)
+module Handlebars.Value exposing (Value(..), get, fromJson)
+
+{-| Represents Json values inside the Handelbar context.
+
+@docs Value, get, fromJson
+
+-}
 
 import Array exposing (Array)
 import Dict exposing (Dict)
-import Internal.Path exposing (Path)
+import Handlebars.Path exposing (Path)
+import Json.Encode
 import Json.Value
 
 
+{-| Handlebar values
+
+    undefined =
+        BoolenValue False
+
+    null =
+        BooleanValue False
+
+    int =
+        StringValue (String.fromInt int)
+
+    float =
+        StringValue (String.fromFloat float)
+
+-}
 type Value
     = StringValue String
     | BooleanValue Bool
@@ -13,32 +35,38 @@ type Value
     | ObjectValue (Dict String Value)
 
 
-fromJson : Json.Value.JsonValue -> Value
-fromJson v =
-    case v of
-        Json.Value.ObjectValue list ->
-            list
-                |> List.map (Tuple.mapSecond fromJson)
-                |> Dict.fromList
-                |> ObjectValue
+{-| convert Json into Handlebar values
+-}
+fromJson : Json.Encode.Value -> Value
+fromJson value =
+    let
+        fun v =
+            case v of
+                Json.Value.ObjectValue list ->
+                    list
+                        |> List.map (Tuple.mapSecond fun)
+                        |> Dict.fromList
+                        |> ObjectValue
 
-        Json.Value.ArrayValue list ->
-            list
-                |> List.map fromJson
-                |> Array.fromList
-                |> ArrayValue
+                Json.Value.ArrayValue list ->
+                    list
+                        |> List.map fun
+                        |> Array.fromList
+                        |> ArrayValue
 
-        Json.Value.BoolValue bool ->
-            bool |> BooleanValue
+                Json.Value.BoolValue bool ->
+                    bool |> BooleanValue
 
-        Json.Value.NullValue ->
-            False |> BooleanValue
+                Json.Value.NullValue ->
+                    False |> BooleanValue
 
-        Json.Value.NumericValue float ->
-            float |> String.fromFloat |> StringValue
+                Json.Value.NumericValue float ->
+                    float |> String.fromFloat |> StringValue
 
-        Json.Value.StringValue string ->
-            StringValue string
+                Json.Value.StringValue string ->
+                    StringValue string
+    in
+    value |> Json.Value.decodeValue |> fun
 
 
 {-| Get a value by the path.
