@@ -133,6 +133,8 @@ compile config string json =
             )
 
 
+{-| Print the error in a nice and readable way.
+-}
 errorToString : Error -> String
 errorToString e0 =
     case e0 of
