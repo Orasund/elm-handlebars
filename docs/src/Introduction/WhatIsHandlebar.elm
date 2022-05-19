@@ -59,7 +59,7 @@ Missing features are:
   2. It can be abused to essentially a let expression (binding any constant value to a variable)
   3. The indended use, namely simplifing nested expressions, can be implemented with a simple helper without needing any special behaviour.
   
-  Instead Elm-Handlebars ships with a different helper called the `in` helper that can be used the change the context of a block.
+  Instead Elm-Handlebars ships with a different helper called the `inside` helper that can be used the change the context of a block.
 * **`logs` expression helper**
   This helper would have been hard to implement. Though, it can be added quite easily as a custom helper. Therefore, its not included as a default helper.
 * **Html escaping**

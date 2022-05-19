@@ -1,7 +1,7 @@
 {
   "root": "../src",
   "tests": [
-    "Internal.Path",
+    "Handlebars.Path",
     "Handlebars.Expression",
     "Handlebars.Value",
     "Handlebars.Helper",

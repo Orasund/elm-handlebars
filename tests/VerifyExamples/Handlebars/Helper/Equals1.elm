@@ -32,12 +32,12 @@ compile template value =
 
 spec1 : Test.Test
 spec1 =
-    Test.test "#equals: \n\n    \"{ \\\"first\\\":[\\\"Jack\\\", \\\"Gill\\\"],\\\"second\\\": [\\\"Jack\\\",\\\"Gill\\\"] }\"\n        |> compile \"{{#if (equals first second)}}equal{{/if}}\"\n    --> Just \"equal\"" <|
+    Test.test "#equals: \n\n    \"{ \\\"first\\\":[\\\"Jack\\\", \\\"Gill\\\"],\\\"second\\\": [\\\"Jack\\\",\\\"Gill\\\"] }\"\n        |> compile \"{{#if (equals first.0 second.0)}}equal{{/if}}\"\n    --> Just \"equal\"" <|
         \() ->
             Expect.equal
                 (
                 "{ \"first\":[\"Jack\", \"Gill\"],\"second\": [\"Jack\",\"Gill\"] }"
-                    |> compile "{{#if (equals first second)}}equal{{/if}}"
+                    |> compile "{{#if (equals first.0 second.0)}}equal{{/if}}"
                 )
                 (
                 Just "equal"

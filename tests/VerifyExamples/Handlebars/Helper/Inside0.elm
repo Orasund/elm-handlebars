@@ -8,7 +8,6 @@ import Expect
 
 import Handlebars.Helper exposing (..)
 import Json.Decode as D
-import Handlebars
 import Result.Extra as Result
 import Handlebars exposing (Error(..))
 import Handlebars.Expression as Expression exposing (Expression(..), SubExp(..))
@@ -16,27 +15,30 @@ import Parser
 
 
 
-compile : String -> String -> Maybe (Result Error String)
+compile : String -> String -> Maybe String
 compile template value =
     case value |> D.decodeString D.value of
         Ok v ->
-            v
-            |> Handlebars.compile Handlebars.defaultConfig
-                template
-            |> Just
+            case
+                v
+                |> Handlebars.compile Handlebars.defaultConfig
+                    template
+            of
+            Ok result -> Just result
+            Err _ -> Nothing
         Err _ -> Nothing
 
 
 
 spec0 : Test.Test
 spec0 =
-    Test.test "#inside: \n\n    \"{ \\\"name\\\":\\\"Jack\\\",\\\"key\\\":\\\"name\\\" }\"\n        |> compile \"{{#inside key}}{{.}}{{/inside}}\"\n    --> Just (Ok \"Jack\")" <|
+    Test.test "#inside: \n\n    \"{ \\\"name\\\":\\\"Jack\\\",\\\"key\\\":\\\"doesNotExist\\\" }\"\n        |> compile \"{{#inside key}}{{.}}{{/inside}}\"\n    --> Nothing" <|
         \() ->
             Expect.equal
                 (
-                "{ \"name\":\"Jack\",\"key\":\"name\" }"
+                "{ \"name\":\"Jack\",\"key\":\"doesNotExist\" }"
                     |> compile "{{#inside key}}{{.}}{{/inside}}"
                 )
                 (
-                Just (Ok "Jack")
+                Nothing
                 )

@@ -65,6 +65,10 @@ import Result.Extra
         |> compile "{{#if (equals first.0 second.0)}}equal{{/if}}"
         --> Just "equal"
 
+    "{ \"first\":[\"Jack\", \"Gill\"],\"second\": [\"Jack\",\"Gill\"] }"
+        |> compile "{{#if (equals first.0)}}equal{{/if}}"
+        --> Nothing
+
 -}
 equals : ExpHelper
 equals l =
@@ -347,23 +351,36 @@ unless { arg, content } =
     import Handlebars.Expression as Expression exposing (Expression(..), SubExp(..))
     import Handlebars exposing (Error(..))
     import Result.Extra as Result
-    import Handlebars
     import Json.Decode as D
 
-    compile : String -> String -> Maybe (Result Error String)
+    compile : String -> String -> Maybe String
     compile template value =
         case value |> D.decodeString D.value of
             Ok v ->
-                v
-                |> Handlebars.compile Handlebars.defaultConfig
-                    template
-                |> Just
+                case
+                    v
+                    |> Handlebars.compile Handlebars.defaultConfig
+                        template
+                of
+                Ok result -> Just result
+                Err _ -> Nothing
             Err _ -> Nothing
+
 
     "{ \"name\":\"Jack\",\"key\":\"name\" }"
         |> compile "{{#inside key}}{{.}}{{/inside}}"
 
-        --> Just (Ok "Jack")
+        --> Just ("Jack")
+
+    "{ \"name\":\"Jack\",\"key\":false }"
+        |> compile "{{#inside key}}{{.}}{{/inside}}"
+
+        --> Nothing
+
+    "{ \"name\":\"Jack\",\"key\":\"doesNotExist\" }"
+        |> compile "{{#inside key}}{{.}}{{/inside}}"
+
+        --> Nothing
 
 -}
 inside : BlockHelper
