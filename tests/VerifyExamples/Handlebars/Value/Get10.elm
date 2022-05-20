@@ -12,6 +12,9 @@ import Dict
 
 
 
+isValid : Value
+isValid =
+    BooleanValue True
 array : Value
 array =
     [ jack, gill ]
@@ -28,12 +31,12 @@ object = Dict.fromList [ ( "name", StringValue "Jack" ) ] |> ObjectValue
 
 spec10 : Test.Test
 spec10 =
-    Test.test "#get: \n\n    array\n        |> get [\"0\",\"@first\"]\n    --> Just (BooleanValue True)" <|
+    Test.test "#get: \n\n    array\n        |> get [\"1\",\"@last\"]\n    --> Just (BooleanValue True)" <|
         \() ->
             Expect.equal
                 (
                 array
-                    |> get ["0","@first"]
+                    |> get ["1","@last"]
                 )
                 (
                 Just (BooleanValue True)

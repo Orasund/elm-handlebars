@@ -12,6 +12,9 @@ import Dict
 
 
 
+isValid : Value
+isValid =
+    BooleanValue True
 array : Value
 array =
     [ jack, gill ]

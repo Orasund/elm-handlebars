@@ -32,13 +32,13 @@ compile template value =
 
 spec2 : Test.Test
 spec2 =
-    Test.test "#inside: \n\n    \"{ \\\"name\\\":\\\"Jack\\\",\\\"key\\\":\\\"name\\\" }\"\n        |> compile \"{{#inside key}}{{.}}{{/inside}}\"\n    --> Just (\"Jack\")" <|
+    Test.test "#inside: \n\n    \"{ \\\"name\\\":\\\"Jack\\\",\\\"key\\\":false }\"\n        |> compile \"{{#inside key}}{{.}}{{/inside}}\"\n    --> Nothing" <|
         \() ->
             Expect.equal
                 (
-                "{ \"name\":\"Jack\",\"key\":\"name\" }"
+                "{ \"name\":\"Jack\",\"key\":false }"
                     |> compile "{{#inside key}}{{.}}{{/inside}}"
                 )
                 (
-                Just ("Jack")
+                Nothing
                 )

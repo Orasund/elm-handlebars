@@ -183,11 +183,11 @@ For Strings and Boolean only an empty path is allowed.
 
     jack
         |> get ["something"]
-        |> Nothing
+        --> Nothing
 
     jack
         |> get []
-        |> Just jack
+        --> Just jack
 
     isValid : Value
     isValid =
@@ -195,11 +195,11 @@ For Strings and Boolean only an empty path is allowed.
 
     isValid
         |> get ["something"]
-        |> Nothing
+        --> Nothing
 
     isValid
         |> get []
-        |> Just isValid
+        --> Just isValid
 
 -}
 get : Path -> Value -> Maybe Value

@@ -377,7 +377,11 @@ unless { arg, content } =
 
         --> Nothing
 
-    "{ \"name\":\"Jack\",\"key\":\"doesNotExist\" }"
+    "{ \"name\":\"Jack\",\"key\":0 }"
+        |> compile "{{#inside key}}{{.}}{{/inside}}"
+
+        --> Nothing
+    "{ \"name\":\"Jack\",\"key\":\"notAPath...\" }"
         |> compile "{{#inside key}}{{.}}{{/inside}}"
 
         --> Nothing

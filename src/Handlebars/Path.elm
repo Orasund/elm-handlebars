@@ -73,9 +73,13 @@ relativeToString ( int, list ) =
 
 {-|
 
-    toString : Path -> String
-    toString list =
-        relativeToString ( 0, list )
+    list : List String
+    list =
+        ["people","Jack"]
+
+    list
+        |> toString
+        --> relativeToString (0,list)
 
 -}
 toString : Path -> String
