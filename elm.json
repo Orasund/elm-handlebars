@@ -1,9 +1,9 @@
 {
   "type": "package",
   "name": "Orasund/elm-handlebars",
-  "summary": "Handlebars compiler for Elm",
+  "summary": "Compile Handlebars Templates in Elm",
   "license": "BSD-3-Clause",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "exposed-modules": [
     "Handlebars.Expression",
     "Handlebars.Helper",
