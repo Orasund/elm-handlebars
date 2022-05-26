@@ -35,16 +35,23 @@ jack =
 
 spec5 : Test.Test
 spec5 =
-    Test.test "#evalExp: \n\n    evalExp Handlebars.defaultConfig\n        (\"Hello World\"\n            |> Text\n        )\n        value\n    --> Ok \"Hello World\"" <|
+    Test.test "#evalExp: \n\n    evalExp Handlebars.defaultConfig\n        ( For (0,[\"doesNotExist\"])\n            [\"Success\" |> Text]\n        )\n        value\n        |> (\\err ->\n            case err of\n                Err (PathNotFound _) ->\n                    False\n                _ ->\n                    True\n            )\n    --> False" <|
         \() ->
             Expect.equal
                 (
                 evalExp Handlebars.defaultConfig
-                    ("Hello World"
-                        |> Text
+                    ( For (0,["doesNotExist"])
+                        ["Success" |> Text]
                     )
                     value
+                    |> (\err ->
+                        case err of
+                            Err (PathNotFound _) ->
+                                False
+                            _ ->
+                                True
+                        )
                 )
                 (
-                Ok "Hello World"
+                False
                 )

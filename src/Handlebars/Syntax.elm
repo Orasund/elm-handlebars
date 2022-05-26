@@ -70,6 +70,21 @@ Helper Block
     |> Result.isOk
     --> False
 
+    "{{#. a}}hello world{{/test}}"
+    |> Parser.run exp
+    |> Result.isOk
+    --> False
+
+    "{{#.invalid.}}hello world{{/.invalid.}}"
+    |> Parser.run exp
+    |> Result.isOk
+    --> False
+
+    "{{#. a}}hello world{{/.}}"
+    |> Parser.run exp
+    |> Result.isOk
+    --> False
+
     "{{#blockHelper (helper a)}}hello world{{/blockHelper}}"
     |> Parser.run exp
     --> Ok (Block "blockHelper" (Helper "helper" (LookUp (0,["a"]),[])) [Text "hello world"])

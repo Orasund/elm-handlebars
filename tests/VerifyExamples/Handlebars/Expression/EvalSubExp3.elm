@@ -28,13 +28,13 @@ jack =
 
 spec3 : Test.Test
 spec3 =
-    Test.test "#evalSubExp: \n\n    LookUp (1,[])\n        |> evalSubExp {defaultConfig | root = [\"name\"]} value\n    --> Ok value" <|
+    Test.test "#evalSubExp: \n\n    Helper \"lookup\" ( LookUp (0,[]), [LookUp (0,[ \"key\" ])] )\n        |> evalSubExp defaultConfig value\n    --> Ok jack" <|
         \() ->
             Expect.equal
                 (
-                LookUp (1,[])
-                    |> evalSubExp {defaultConfig | root = ["name"]} value
+                Helper "lookup" ( LookUp (0,[]), [LookUp (0,[ "key" ])] )
+                    |> evalSubExp defaultConfig value
                 )
                 (
-                Ok value
+                Ok jack
                 )

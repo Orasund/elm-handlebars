@@ -19,11 +19,11 @@ import Parser
 
 spec3 : Test.Test
 spec3 =
-    Test.test "#exp: \n\n    \"{{#some.test a}}hello world{{/test}}\"\n    |> Parser.run exp\n    |> Result.isOk\n    --> False" <|
+    Test.test "#exp: \n\n    \"{{#. a}}hello world{{/.}}\"\n    |> Parser.run exp\n    |> Result.isOk\n    --> False" <|
         \() ->
             Expect.equal
                 (
-                "{{#some.test a}}hello world{{/test}}"
+                "{{#. a}}hello world{{/.}}"
                 |> Parser.run exp
                 |> Result.isOk
                 )

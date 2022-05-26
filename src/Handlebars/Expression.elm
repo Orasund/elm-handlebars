@@ -136,6 +136,17 @@ Helper can also be used inside of subexpression.
         )
         --> True
 
+    Helper "invalid" (LookUp (0,[]),[])
+        |> evalSubExp defaultConfig value
+        |> (\err ->
+            case err of
+                Err (HelperNotFound _) ->
+                    False
+                _ ->
+                    True
+        )
+        --> False
+
 -}
 evalSubExp : Config -> Value -> SubExp -> Result Error Value
 evalSubExp template value e1 =
@@ -224,11 +235,11 @@ evalSubExp template value e1 =
         |> (\err ->
             case err of
                 Err (StringExpected _) ->
-                    True
-                _ ->
                     False
+                _ ->
+                    True
             )
-        --> True
+        --> False
 
     evalExp Handlebars.defaultConfig
         ( For (0,["people"])
@@ -236,6 +247,69 @@ evalSubExp template value e1 =
         )
         value
         --> Ok "01"
+
+    evalExp Handlebars.defaultConfig
+        ( For (0,[])
+            [ "+" |> Text]
+        )
+        value
+        --> Ok "++++"
+
+    evalExp Handlebars.defaultConfig
+        ( For (0,["doesNotExist"])
+            ["Success" |> Text]
+        )
+        value
+        |> (\err ->
+            case err of
+                Err (PathNotFound _) ->
+                    False
+                _ ->
+                    True
+            )
+        --> False
+
+    evalExp Handlebars.defaultConfig
+        ( For (0,["..notValid.."])
+            ["Success" |> Text]
+        )
+        value
+        |> (\err ->
+            case err of
+                Err (PathNotFound _) ->
+                    False
+                _ ->
+                    True
+            )
+        --> False
+
+    evalExp Handlebars.defaultConfig
+        ( For (42,[])
+            ["Success" |> Text]
+        )
+        value
+        |> (\err ->
+            case err of
+                Err (PathNotValid _ _) ->
+                    False
+                _ ->
+                    True
+            )
+        --> False
+
+    evalExp Handlebars.defaultConfig
+        ( For (0,["valid"])
+            ["Success" |> Text]
+        )
+        value
+        |> (\err ->
+            case err of
+                Err (CollectionExpected _ _) ->
+                    False
+                _ ->
+                    True
+            )
+        --> False
 
     evalExp Handlebars.defaultConfig
         ( Block "if" (LookUp (0,["valid"]))

@@ -28,13 +28,20 @@ jack =
 
 spec2 : Test.Test
 spec2 =
-    Test.test "#evalSubExp: \n\n    Helper \"lookup\" ( LookUp (0,[]), [LookUp (0,[ \"key\" ])] )\n        |> evalSubExp defaultConfig value\n    --> Ok jack" <|
+    Test.test "#evalSubExp: \n\n    Helper \"lookup\" ( LookUp (0,[ \"name\"]), [LookUp (0,[ \"key\" ])] )\n        |> evalSubExp defaultConfig value\n        |> (\\err ->\n            case err of\n                Err (FromHelper args) ->\n                    args.helper == \"lookup\"\n                _ ->\n                    False\n        )\n    --> True" <|
         \() ->
             Expect.equal
                 (
-                Helper "lookup" ( LookUp (0,[]), [LookUp (0,[ "key" ])] )
+                Helper "lookup" ( LookUp (0,[ "name"]), [LookUp (0,[ "key" ])] )
                     |> evalSubExp defaultConfig value
+                    |> (\err ->
+                        case err of
+                            Err (FromHelper args) ->
+                                args.helper == "lookup"
+                            _ ->
+                                False
+                    )
                 )
                 (
-                Ok jack
+                True
                 )

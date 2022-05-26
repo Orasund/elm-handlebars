@@ -35,17 +35,23 @@ jack =
 
 spec4 : Test.Test
 spec4 =
-    Test.test "#evalExp: \n\n    evalExp Handlebars.defaultConfig\n        ( (0,[\"name\"])\n            |> LookUp\n            |> Variable\n        )\n        value\n    --> Ok \"jack\"" <|
+    Test.test "#evalExp: \n\n    evalExp Handlebars.defaultConfig\n        ( For (0,[\"..notValid..\"])\n            [\"Success\" |> Text]\n        )\n        value\n        |> (\\err ->\n            case err of\n                Err (PathNotFound _) ->\n                    False\n                _ ->\n                    True\n            )\n    --> False" <|
         \() ->
             Expect.equal
                 (
                 evalExp Handlebars.defaultConfig
-                    ( (0,["name"])
-                        |> LookUp
-                        |> Variable
+                    ( For (0,["..notValid.."])
+                        ["Success" |> Text]
                     )
                     value
+                    |> (\err ->
+                        case err of
+                            Err (PathNotFound _) ->
+                                False
+                            _ ->
+                                True
+                        )
                 )
                 (
-                Ok "jack"
+                False
                 )

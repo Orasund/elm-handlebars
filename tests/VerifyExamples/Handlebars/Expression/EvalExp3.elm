@@ -35,26 +35,23 @@ jack =
 
 spec3 : Test.Test
 spec3 =
-    Test.test "#evalExp: \n\n    evalExp Handlebars.defaultConfig\n        ( Helper \"equals\"\n            ( LookUp (0,[ \"name\"])\n            , [ LookUp (0,[ \"key\"]) ]\n            )\n            |> Variable\n        )\n        value\n        |> (\\err ->\n            case err of\n                Err (StringExpected _) ->\n                    True\n                _ ->\n                    False\n            )\n    --> True" <|
+    Test.test "#evalExp: \n\n    evalExp Handlebars.defaultConfig\n        ( For (42,[])\n            [\"Success\" |> Text]\n        )\n        value\n        |> (\\err ->\n            case err of\n                Err (PathNotValid _ _) ->\n                    False\n                _ ->\n                    True\n            )\n    --> False" <|
         \() ->
             Expect.equal
                 (
                 evalExp Handlebars.defaultConfig
-                    ( Helper "equals"
-                        ( LookUp (0,[ "name"])
-                        , [ LookUp (0,[ "key"]) ]
-                        )
-                        |> Variable
+                    ( For (42,[])
+                        ["Success" |> Text]
                     )
                     value
                     |> (\err ->
                         case err of
-                            Err (StringExpected _) ->
-                                True
-                            _ ->
+                            Err (PathNotValid _ _) ->
                                 False
+                            _ ->
+                                True
                         )
                 )
                 (
-                True
+                False
                 )
