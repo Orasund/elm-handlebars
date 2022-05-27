@@ -3,7 +3,7 @@ Elm-Handlebars is a dialect of the Handlebars templating language for Elm
 
 It uses a template and a json input to generate a String.
 
-    <p>{{fristname}} {{lastname}}</p>
+    <p>{{firstname}} {{lastname}}</p>
 
 A handlebars expression is a `{{`, some contents followed by a `}}`.
 These expression will be then replaces with values from the json.
@@ -23,7 +23,7 @@ You can now start using the language by providing a json file and a template.ali
             case
                 value
                 |> Handlebars.compile Handlebars.defaultConfig
-                    "<p>{{fristname}} {{lastname}}</p>"
+                    "<p>{{firstname}} {{lastname}}</p>"
             of
             Just string ->
                 string
