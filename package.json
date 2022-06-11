@@ -1,23 +1,11 @@
 {
+  "private": true,
   "name": "elm-handlebars",
-  "version": "1.0.0",
-  "description": "Elm-Handlebars is a dialect of the Handlebars templating language for Elm",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs",
-    "test": "tests"
-  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "postinstall": "elm-tooling install"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Orasund/elm-handlebars.git"
+  "devDependencies": {
+    "elm-tooling": "^1.6.0"
   },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Orasund/elm-handlebars/issues"
-  },
-  "homepage": "https://github.com/Orasund/elm-handlebars#readme"
+  "postinstall": "elm-tooling install"
 }
