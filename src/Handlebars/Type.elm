@@ -72,6 +72,36 @@ set path maybeValue maybeType =
                     Any |> Just
 
 
+{-|
+
+    import Dict
+
+    []
+        |> Dict.fromList
+        |> normalize
+        --> Nothing
+
+    [ ([],Nothing)]
+        |> Dict.fromList
+        |> normalize
+        --> Nothing
+
+    [ ([],Just ())]
+        |> Dict.fromList
+        |> normalize
+        --> Just Any
+
+    [ (["@index"],Nothing)]
+        |> Dict.fromList
+        |> normalize
+        --> Just (ArrayType Nothing)
+
+    [ (["people"],Just ())]
+        |> Dict.fromList
+        |> normalize
+        --> Just ([("people",Just Any)] |> Dict.fromList |> DictType)
+
+-}
 normalize : Dict Path (Maybe ()) -> Maybe Type
 normalize =
     Dict.foldl
