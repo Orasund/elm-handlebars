@@ -153,7 +153,7 @@ Use `@index` to get the index
 
     array
         |> get ["1","@last"]
-        --> Just (BooleanValue False)
+        --> Just (BooleanValue True)
 
     array
         |> get ["-1"]
