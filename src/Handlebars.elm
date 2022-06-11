@@ -23,6 +23,7 @@ import Handlebars.Expression as Expression exposing (Config, Error(..), Expressi
 import Handlebars.Helper as Helper
 import Handlebars.Path as Path exposing (Path, RelativePath)
 import Handlebars.Syntax as Syntax
+import Handlebars.Type as Type exposing (Type)
 import Handlebars.Value as Value exposing (Value(..))
 import Json.Decode as D exposing (Decoder)
 import Json.Encode
@@ -34,7 +35,7 @@ import Set exposing (Set)
 {-| Template
 -}
 type alias Template =
-    List Expression
+    ( List Expression, Maybe Type )
 
 
 {-| Possible error are either syntactical or semantical.
@@ -67,14 +68,28 @@ defaultConfig =
 {-| parse a string into a template
 -}
 parse : String -> Result (List Parser.DeadEnd) Template
-parse =
-    Parser.run Syntax.parser
+parse string =
+    string
+        |> Parser.run Syntax.parser
+        |> Result.map
+            (\exp ->
+                ( exp
+                , (case Type.ofTemplate exp of
+                    Ok t ->
+                        t
+
+                    Err _ ->
+                        Dict.empty
+                  )
+                    |> Type.normalize
+                )
+            )
 
 
 {-| evaluate a template using a json value
 -}
 eval : Config -> Template -> Json.Encode.Value -> Result Expression.Error String
-eval config expressions v =
+eval config ( expressions, _ ) v =
     let
         context =
             v
