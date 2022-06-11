@@ -152,10 +152,6 @@ Use `@index` to get the index
         --> Just (BooleanValue True)
 
     array
-        |> get ["1","@last"]
-        --> Just (BooleanValue True)
-
-    array
         |> get ["-1"]
         --> Nothing
 
