@@ -136,6 +136,10 @@ Tests:
         |> compile "Hello There"
         --> (Ok "Hello There")
 
+    "{ \"people\":[\"Jack\",\"Gill\"] }"
+        |> compile "{{#people}}{{.}} {{/people}}"
+        --> (Ok "Jack Gill ")
+
 -}
 compile : Config -> String -> Json.Encode.Value -> Result Error String
 compile config string json =

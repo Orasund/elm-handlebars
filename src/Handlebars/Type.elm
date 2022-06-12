@@ -101,6 +101,26 @@ set path maybeValue maybeType =
         |> normalize
         --> Just ([("people",Just Any)] |> Dict.fromList |> DictType)
 
+    [ (["@index"],Just ()), (["people"],Just ())]
+        |> Dict.fromList
+        |> normalize
+        --> Just Any
+
+    [ ([],Just ()), (["@index"],Nothing)]
+        |> Dict.fromList
+        |> normalize
+        --> Just Any
+
+    [ (["@index"],Just ())]
+        |> Dict.fromList
+        |> normalize
+        --> Just (ArrayType (Just Any))
+
+    [ (["@index"],Nothing), (["@index","people"],Nothing)]
+        |> Dict.fromList
+        |> normalize
+        --> Just (ArrayType ([("people", Nothing)] |> Dict.fromList |> DictType|> Just))
+
 -}
 normalize : Dict Path (Maybe ()) -> Maybe Type
 normalize =
